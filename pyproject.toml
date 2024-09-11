@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Xida Ren <cedar.ren@gmail.com>"]
 readme = "README.md"
+packages = [{include = "chatsh"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -12,7 +13,10 @@ anthropic = "0.34.1"
 openai = "1.43.0"
 protobuf = "5.28.0"
 tiktoken = "0.7.0"
+google-generativeai = "*"
 
+[tool.poetry.scripts]
+chatsh = "chatsh:main"
 
 [build-system]
 requires = ["poetry-core"]

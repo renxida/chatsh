@@ -7,7 +7,7 @@ import os
 import sys
 from datetime import datetime
 import re
-from chat import chat, MODELS
+from chatsh.chat import chat, MODELS
 from pathlib import Path
 import shutil
 
@@ -44,14 +44,14 @@ async def get_shell():
 
 def generate_system_description():
     result = f"""
-- system information: 
+- system information:
 """ + asyncio.run(get_shell())
-    
+
     available_commands = []
     for cmd, desc in COMMAND_DESCRIPTIONS.items():
         if shutil.which(cmd):
             available_commands.append(f"{cmd}: {desc}")
-    
+
     result += "\n\n"
     result += "Available commands:\n" + "\n".join(available_commands)
 
@@ -94,7 +94,7 @@ def handle_back_command(user_message, chat_instance):
     return False
 
 # Main interaction loop
-async def main():
+async def main_loop():
     last_output = ""
 
     global initialUserMessage
@@ -121,7 +121,7 @@ async def main():
                 append_to_history('SYSTEM', "I'm sorry to hear that. Please let me know how I can improve.")
                 print(f"Conversation transcript saved to: {conversationFile}")
                 break
-        
+
         if handle_back_command(user_message, chat_instance):
             continue
 
@@ -132,7 +132,7 @@ async def main():
 
             assistant_message = await chat_instance.ask(full_message, system=SYSTEM_PROMPT, model=MODEL, max_tokens=8192, system_cacheable=True)
             print()
-            
+
             append_to_history('ChatSH', assistant_message)
 
             codes = extract_codes(assistant_message)
@@ -167,6 +167,8 @@ async def main():
         except Exception as error:
             print(f"Error: {error}")
             append_to_history('ERROR', str(error))
+def main():
+    asyncio.run(main_loop())
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
