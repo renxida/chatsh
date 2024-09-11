@@ -1,9 +1,8 @@
 {
   description = "Application packaged using poetry2nix";
-
   inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -13,32 +12,37 @@
   outputs = { self, nixpkgs, flake-utils, poetry2nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        # see https://github.com/nix-community/poetry2nix/tree/master#api for more functions and examples.
         pkgs = nixpkgs.legacyPackages.${system};
-        inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication;
-      in
-      {
-        packages = {
-          chatsh = mkPoetryApplication { projectDir = self; };
-          default = self.packages.${system}.chatsh;
+        inherit (poetry2nix.lib.mkPoetry2Nix { inherit pkgs; }) mkPoetryApplication defaultPoetryOverrides;
+
+        customOverrides = defaultPoetryOverrides.extend (self: super: {
+          # Add overrides only if the package exists in super
+          maturin = if super ? maturin then super.maturin.overridePythonAttrs (old: {
+            buildInputs = (old.buildInputs or []) ++ [ pkgs.rustc pkgs.cargo ];
+          }) else null;
+
+          tiktoken = if super ? tiktoken then super.tiktoken.overridePythonAttrs (old: {
+            buildInputs = (old.buildInputs or []) ++ [ self.setuptools-rust pkgs.rustc pkgs.cargo ];
+          }) else null;
+
+          pydantic-core = if super ? pydantic-core then super.pydantic-core.overridePythonAttrs (old: {
+            buildInputs = (old.buildInputs or []) ++ [ pkgs.rustc pkgs.cargo ];
+          }) else null;
+        });
+
+        chatsh = mkPoetryApplication {
+          projectDir = ./.;
+          overrides = [ customOverrides ];
+          preferWheels = true;
         };
 
-        # Shell for app dependencies.
-        #
-        #     nix develop
-        #
-        # Use this shell for developing your app.
+      in {
+        packages.default = chatsh;
+
         devShells.default = pkgs.mkShell {
-          inputsFrom = [ self.packages.${system}.chatsh ];
-        };
-
-        # Shell for poetry.
-        #
-        #     nix develop .#poetry
-        #
-        # Use this shell for changes to pyproject.toml and poetry.lock.
-        devShells.poetry = pkgs.mkShell {
+          inputsFrom = [ chatsh ];
           packages = [ pkgs.poetry ];
         };
-      });
+      }
+    );
 }
