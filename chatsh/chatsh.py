@@ -72,7 +72,9 @@ chat_instance = chat(MODEL)
 # If there are words after the 'chatsh', set them as the initialUserMessage
 initialUserMessage = ' '.join(sys.argv[2:]) if len(sys.argv) > 2 else None
 
-HISTORY_DIR = Path(__file__).resolve().parent / 'chatsh_history'
+# Get the XDG_DATA_HOME environment variable or default to ~/.local/share
+xdg_data_home = os.getenv('XDG_DATA_HOME', Path(os.getenv('HOME')) / '.local' / 'share')
+HISTORY_DIR = Path(xdg_data_home) / 'chatsh_history'
 
 # Ensure the history directory exists
 os.makedirs(HISTORY_DIR, exist_ok=True)
