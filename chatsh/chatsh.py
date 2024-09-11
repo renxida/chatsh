@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.syntax import Syntax
 from rich.panel import Panel
+from rich.live import Live
 
 
 console = Console()
@@ -137,10 +138,13 @@ async def main_loop():
 
             # Stream the assistant's response
             assistant_message = ""
-            async for chunk in chat_instance.ask(full_message, system=SYSTEM_PROMPT, model=MODEL, max_tokens=8192, system_cacheable=True, stream=True):
-                assistant_message += chunk
-                console.print(Markdown(chunk), end="")
-            console.print()
+            with Live(console=console, refresh_per_second=4) as live:
+                async for chunk in chat_instance.ask(full_message, system=SYSTEM_PROMPT, model=MODEL, max_tokens=8192, system_cacheable=True, stream=True):
+                    assistant_message += chunk
+                    live.update(Markdown(assistant_message))
+            console.print()  # Add a newline after the response
+
+
 
             append_to_history('ChatSH', assistant_message)
 

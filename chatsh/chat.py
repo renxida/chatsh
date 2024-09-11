@@ -45,16 +45,19 @@ class AnthropicChat(Chat):
         params = {"system": prompt_system, "model": model, "temperature": temperature, "max_tokens": max_tokens,}
 
         try:
+            assistant_message = ""
             if stream:
                 async with client.messages.stream(**params, messages=self.messages + [{"role": "user", "content": user_message}]) as stream:
                     async for text in stream.text_stream:
+                        assistant_message += text
                         yield text
             else:
                 response = await client.messages.create(**params, messages=self.messages + [{"role": "user", "content": user_message}])
+                assistant_message = response.content
                 yield response.content
 
             self.messages.append({"role": "user", "content": user_message})
-            self.messages.append({"role": 'assistant', "content": ''.join([chunk async for chunk in stream.text_stream])})
+            self.messages.append({"role": 'assistant', "content": assistant_message})
         except Exception as e:
             print(f"\nError occurred: {str(e)}")
             print("The last message was not added to the conversation history.")
