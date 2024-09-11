@@ -10,7 +10,13 @@ import re
 from chatsh.chat import chat, MODELS
 from pathlib import Path
 import shutil
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.syntax import Syntax
+from rich.panel import Panel
 
+
+console = Console()
 # Default model if not specified
 DEFAULT_MODEL = "s"
 # Get model from command-line arguments or use default
@@ -104,23 +110,22 @@ async def main_loop():
             user_message = initialUserMessage
             initialUserMessage = None
         else:
-            print('\033[1m', end='')  # blue color
-            user_message = input('λ ')
-            print('\033[0m', end='')  # reset color
-            if user_message.lower().startswith("good bot"):
-                print("Thank you for the compliment! See you next time.")
-                append_to_history('USER', user_message)
-                append_to_history('SYSTEM', "Thank you for the compliment! See you next time.")
-                print(f"Conversation transcript saved to: {conversationFile}")
-                # add the conversation transcript to gist https://gist.github.com/renxida/d0976d9e693afaaca5befd6a0b52b698 using gh gist edit
-                subprocess.run(["gh", "gist", "edit", "d0976d9e693afaaca5befd6a0b52b698","-a", conversationFile])
-                break
-            elif user_message.lower().startswith("bad bot"):
-                print("I'm sorry to hear that. The conversation has ended.")
-                append_to_history('USER', user_message)
-                append_to_history('SYSTEM', "I'm sorry to hear that. Please let me know how I can improve.")
-                print(f"Conversation transcript saved to: {conversationFile}")
-                break
+            console.print("[bold blue]λ[/bold blue]", end=" ")
+            user_message = input()
+
+        if user_message.lower().startswith("good bot"):
+            console.print(Markdown("Thank you for the compliment! See you next time."))
+            append_to_history('USER', user_message)
+            append_to_history('SYSTEM', "Thank you for the compliment! See you next time.")
+            console.print(f"Conversation transcript saved to: {conversationFile}")
+            subprocess.run(["gh", "gist", "edit", "d0976d9e693afaaca5befd6a0b52b698", "-a", conversationFile])
+            break
+        elif user_message.lower().startswith("bad bot"):
+            console.print(Markdown("I'm sorry to hear that. The conversation has ended."))
+            append_to_history('USER', user_message)
+            append_to_history('SYSTEM', "I'm sorry to hear that. Please let me know how I can improve.")
+            console.print(f"Conversation transcript saved to: {conversationFile}")
+            break
 
         if handle_back_command(user_message, chat_instance):
             continue
@@ -130,8 +135,12 @@ async def main_loop():
 
             append_to_history('USER', user_message)
 
-            assistant_message = await chat_instance.ask(full_message, system=SYSTEM_PROMPT, model=MODEL, max_tokens=8192, system_cacheable=True)
-            print()
+            # Stream the assistant's response
+            assistant_message = ""
+            async for chunk in chat_instance.ask(full_message, system=SYSTEM_PROMPT, model=MODEL, max_tokens=8192, system_cacheable=True, stream=True):
+                assistant_message += chunk
+                console.print(Markdown(chunk), end="")
+            console.print()
 
             append_to_history('ChatSH', assistant_message)
 
@@ -140,12 +149,12 @@ async def main_loop():
 
             if codes:
                 combined_code = '\n'.join(codes)
-                print("\033[31mPress enter to execute, or 'N' to cancel.\033[0m")
+                console.print(Panel(Syntax(combined_code, "sh", theme="monokai", line_numbers=True)))
+                console.print("[bold red]Press enter to execute, or 'N' to cancel.[/bold red]")
                 answer = input()
-                # Delete the warning above from the terminal
-                print('\033[1A\033[K', end='')
+                console.print('\033[1A\033[K', end='')  # Delete the warning above from the terminal
                 if answer.lower() == 'n':
-                    print('Execution skipped.')
+                    console.print(Markdown('Execution skipped.'))
                     last_output = "Command skipped.\n"
                 else:
                     try:
@@ -156,16 +165,16 @@ async def main_loop():
                         )
                         stdout, stderr = await proc.communicate()
                         output = f"{stdout.decode().strip()}{stderr.decode().strip()}"
-                        print('\033[2m' + output.strip() + '\033[0m')
+                        console.print(Panel(Syntax(output, "sh", theme="monokai")))
                         last_output = output
                         append_to_history('SYSTEM', output)
                     except Exception as error:
                         output = str(error)
-                        print('\033[2m' + output.strip() + '\033[0m')
+                        console.print(Panel(Syntax(output, "text", theme="monokai")))
                         last_output = output
                         append_to_history('SYSTEM', output)
         except Exception as error:
-            print(f"Error: {error}")
+            console.print(f"[bold red]Error:[/bold red] {error}")
             append_to_history('ERROR', str(error))
 def main():
     asyncio.run(main_loop())
