@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "chatsh"
+version = "0.1.0"
+description = ""
+authors = ["Xida Ren <cedar.ren@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aiofiles = "24.1.0"
+anthropic = "0.34.1"
+openai = "1.43.0"
+protobuf = "5.28.0"
+tiktoken = "0.7.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
