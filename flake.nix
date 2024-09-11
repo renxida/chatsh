@@ -2,7 +2,7 @@
   description = "ChatSH - A CLI chat application";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable?rev=574d1eac1c200690e27b8eb4e24887f8df7ac27c";
+    nixpkgs.url = "github:nixos/nixpkgs?rev=574d1eac1c200690e27b8eb4e24887f8df7ac27c";
     flake-utils.url = "github:numtide/flake-utils?rev=b1d9ab70662946ef0850d488da1c9019f3a9752a";
   };
 
