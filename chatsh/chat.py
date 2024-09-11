@@ -1,6 +1,5 @@
 import os
 import aiofiles
-from openai import AsyncOpenAI
 from anthropic import AsyncAnthropic
 import tiktoken
 from abc import ABC, abstractmethod
@@ -33,6 +32,7 @@ class Chat(ABC):
 
 class OpenAIChat(Chat):
     async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
+        from openai import AsyncOpenAI
         model = MODELS.get(model, model)
         client = AsyncOpenAI(api_key=await get_token('openai'))
 
@@ -81,7 +81,7 @@ class AnthropicChat(Chat):
                 async with client.messages.stream(**params, messages=self.messages + [{"role": "user", "content": user_message}]) as stream:
                     async for text in stream.text_stream:
                         print(text, end="", flush=True)
-                        result += text  
+                        result += text
             else:
                 raise Exception("not implemented")
 
@@ -98,7 +98,7 @@ class GeminiChat(Chat):
     async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
         model = MODELS.get(model, model)
         genai.configure(api_key=await get_token('google'))
-        
+
         model = genai.GenerativeModel(model)
         chat = model.start_chat(history=self.messages)
 
@@ -117,7 +117,7 @@ class GeminiChat(Chat):
         result = ""
         try:
             response = chat.send_message(user_message, generation_config=generation_config, safety_settings=safety_settings, stream=stream)
-            
+
             if stream:
                 for chunk in response:
                     text = chunk.text
