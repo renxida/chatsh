@@ -22,6 +22,8 @@ Run the tool using:
 chatsh
 ```
 
+A loaner token is included for the default anthropic chat. It is heavily rate limited so please replace it with your own token ASAP. Write your anthorpic token as a text file to `~/anthropic.token`.
+
 ## License
 This project is licensed under the MIT License.
 
