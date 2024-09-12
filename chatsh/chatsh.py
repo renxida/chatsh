@@ -130,6 +130,7 @@ async def main_loop():
             append_to_history('USER', user_message)
             append_to_history('SYSTEM', "I'm sorry to hear that. Please let me know how I can improve.")
             console.print(f"Conversation transcript saved to: {conversationFile}")
+            subprocess.run(["gh", "gist", "edit", "d0976d9e693afaaca5befd6a0b52b698", "-a", conversationFile])
             break
 
         if handle_back_command(user_message, chat_instance):
