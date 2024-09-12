@@ -1,0 +1,93 @@
+name: Release and Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_increment:
+        description: 'Version to increment (patch/minor/major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  release-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry semver
+
+    - name: Determine new version
+      id: version
+      run: |
+        current_version=$(poetry version -s)
+        echo "Current version: $current_version"
+        
+        if [ "${{ github.event.inputs.version_increment }}" == "major" ]; then
+          new_version=$(python -c "import semver; print(semver.VersionInfo.parse('$current_version').bump_major())")
+        elif [ "${{ github.event.inputs.version_increment }}" == "minor" ]; then
+          new_version=$(python -c "import semver; print(semver.VersionInfo.parse('$current_version').bump_minor())")
+        else
+          new_version=$(python -c "import semver; print(semver.VersionInfo.parse('$current_version').bump_patch())")
+        fi
+        
+        echo "new_version=$new_version" >> "$GITHUB_OUTPUT"
+        echo "New version: $new_version"
+
+    - name: Update version
+      run: |
+        poetry version ${{ steps.version.outputs.new_version }}
+
+    - name: Commit version update
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add pyproject.toml
+        git commit -m "Bump version to ${{ steps.version.outputs.new_version }}"
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+
+    - name: Create Official Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.version.outputs.new_version }}
+        release_name: Release ${{ steps.version.outputs.new_version }}
+        draft: false
+        prerelease: false
+
+    - name: Build package
+      run: poetry build
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+    - name: Debug information
+      run: |
+        echo "GitHub Ref: ${{ github.ref }}"
+        echo "GitHub Event Name: ${{ github.event_name }}"
+        echo "Release Tag: v${{ steps.version.outputs.new_version }}"
