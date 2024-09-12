@@ -85,6 +85,7 @@ jobs:
 
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@release/v1
+      environment: release
 
     - name: Debug information
       run: |
