@@ -5,6 +5,12 @@ description = "Syntax-highlighted Claude-controlled bash."
 authors = ["Xida Ren <cedar.ren@gmail.com>"]
 readme = "README.md"
 packages = [{include = "chatsh"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities"
+]
+license = "MIT"  # Assuming you're using MIT license, adjust if different
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -20,10 +26,6 @@ chatsh = "chatsh:main"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.classifiers]
-Development Status = "3 - Alpha"
-Programming Language = "Python :: 3"
 
 [tool.poetry.urls]
 Homepage = "https://github.com/renxida/chatsh"
