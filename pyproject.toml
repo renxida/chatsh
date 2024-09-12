@@ -13,7 +13,7 @@ classifiers = [
 license = "MIT"  # Assuming you're using MIT license, adjust if different
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.8"
 aiofiles = "24.1.0"
 anthropic = "0.34.1"
 protobuf = "5.28.0"
