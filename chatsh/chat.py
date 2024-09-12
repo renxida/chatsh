@@ -16,7 +16,6 @@ MODELS = {
     'i': 'gemini-1.5-flash-latest',
     'I': 'gemini-1.5-pro-exp-0801'
 }
-
 class Chat(ABC):
     def __init__(self):
         self.messages = []
@@ -29,6 +28,51 @@ class Chat(ABC):
         removed_messages = self.messages[-2*steps:]
         del self.messages[-2*steps:]
         return removed_messages
+
+class AnthropicChat(Chat):
+    async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
+        model = MODELS.get(model, model)
+        client = AsyncAnthropic(
+            api_key=await get_token('anthropic'),
+            default_headers={
+                "anthropic-beta": "prompt-caching-2024-07-31"  # Enable prompt caching
+            }
+        )
+
+        cached_system = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+
+        prompt_system = cached_system if system_cacheable else system
+        params = {"system": prompt_system, "model": model, "temperature": temperature, "max_tokens": max_tokens,}
+
+        try:
+            assistant_message = ""
+            if stream:
+                async with client.messages.stream(**params, messages=self.messages + [{"role": "user", "content": user_message}]) as stream:
+                    async for text in stream.text_stream:
+                        assistant_message += text
+                        yield text
+            else:
+                response = await client.messages.create(**params, messages=self.messages + [{"role": "user", "content": user_message}])
+                assistant_message = response.content
+                yield response.content
+
+            self.messages.append({"role": "user", "content": user_message})
+            self.messages.append({"role": 'assistant', "content": assistant_message})
+        except Exception as e:
+            print(f"\nError occurred: {str(e)}")
+            print("The last message was not added to the conversation history.")
+            raise
+
+async def get_token(vendor):
+    token_path = os.path.join(os.path.expanduser('~'), '.config', f'{vendor}.token')
+    try:
+        async with aiofiles.open(token_path, 'r') as f:
+            return (await f.read()).strip()
+    except Exception as err:
+        print(f"Error reading {vendor}.token file: {err}")
+        raise
+
+
 
 class OpenAIChat(Chat):
     async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
@@ -55,41 +99,6 @@ class OpenAIChat(Chat):
             print(f"\nError occurred: {str(e)}")
             print("The last message was not added to the conversation history.")
             self.messages.pop()  # Remove the last user message
-            raise
-
-        return result
-
-class AnthropicChat(Chat):
-    async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
-        model = MODELS.get(model, model)
-        client = AsyncAnthropic(
-            api_key=await get_token('anthropic'),
-            default_headers={
-                "anthropic-beta": "prompt-caching-2024-07-31"  # Enable prompt caching
-            }
-        )
-
-        cached_system = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
-
-        prompt_system = cached_system if system_cacheable else system
-        params = {"system": prompt_system, "model": model, "temperature": temperature, "max_tokens": max_tokens, "stream": stream}
-
-        result = ""
-        try:
-            if stream:
-                del params['stream']
-                async with client.messages.stream(**params, messages=self.messages + [{"role": "user", "content": user_message}]) as stream:
-                    async for text in stream.text_stream:
-                        print(text, end="", flush=True)
-                        result += text
-            else:
-                raise Exception("not implemented")
-
-            self.messages.append({"role": "user", "content": user_message})
-            self.messages.append({"role": 'assistant', "content": result})
-        except Exception as e:
-            print(f"\nError occurred: {str(e)}")
-            print("The last message was not added to the conversation history.")
             raise
 
         return result
