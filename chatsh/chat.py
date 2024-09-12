@@ -1,7 +1,6 @@
 import os
 import aiofiles
 from anthropic import AsyncAnthropic
-import tiktoken
 from abc import ABC, abstractmethod
 
 # Map of model shortcodes to full model names
@@ -176,7 +175,3 @@ async def get_token(vendor):
         print(f"Error reading {vendor}.token file: {err}")
         raise
 
-def token_count(input_text):
-    # Use GPT-4 tokenizer
-    encoding = tiktoken.encoding_for_model("gpt-4")
-    return len(encoding.encode(input_text))
