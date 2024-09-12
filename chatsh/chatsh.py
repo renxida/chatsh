@@ -15,6 +15,8 @@ from rich.markdown import Markdown
 from rich.syntax import Syntax
 from rich.panel import Panel
 from rich.live import Live
+from rich.prompt import Confirm
+
 
 
 console = Console()
@@ -156,13 +158,8 @@ async def main_loop():
             if codes:
                 combined_code = '\n'.join(codes)
                 console.print(Panel(Syntax(combined_code, "sh", theme="monokai", line_numbers=True)))
-                console.print("[bold red]Press enter to execute, or 'N' to cancel.[/bold red]")
-                answer = input()
-                console.print('\033[1A\033[K', end='')  # Delete the warning above from the terminal
-                if answer.lower() == 'n':
-                    console.print(Markdown('Execution skipped.'))
-                    last_output = "Command skipped.\n"
-                else:
+
+                if Confirm.ask("Execute the code?", default=True):
                     try:
                         proc = await asyncio.create_subprocess_shell(
                             combined_code,
@@ -171,6 +168,7 @@ async def main_loop():
                         )
                         stdout, stderr = await proc.communicate()
                         output = f"{stdout.decode().strip()}{stderr.decode().strip()}"
+                        console.print()
                         console.print(Panel(Syntax(output, "sh", theme="monokai")))
                         last_output = output
                         append_to_history('SYSTEM', output)
@@ -179,6 +177,12 @@ async def main_loop():
                         console.print(Panel(Syntax(output, "text", theme="monokai")))
                         last_output = output
                         append_to_history('SYSTEM', output)
+                else:
+                    console.print(Markdown('Execution skipped.'))
+                    last_output = "Command skipped.\n"
+                    append_to_history('SYSTEM', last_output)
+                                      
+
         except Exception as error:
             console.print(f"[bold red]Error:[/bold red] {error}")
             append_to_history('ERROR', str(error))
