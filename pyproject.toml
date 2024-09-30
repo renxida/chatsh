@@ -13,7 +13,7 @@ anthropic = "0.34.1"
 protobuf = "5.28.0"
 tiktoken = "0.7.0"
 rich = "^13.8.1"
-textual = "^0.27.0"
+textual = "^0.32.0"
 
 [tool.poetry.scripts]
 chatsh = "chatsh:main"
