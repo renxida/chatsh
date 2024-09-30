@@ -36,3 +36,8 @@ This project is licensed under the MIT License.
 
 ## Thanks
 Victor Tailin. This project is inspired by his [chatsh.mjs](https://web.archive.org/web/20240000000000*/https://github.com/VictorTaelin/AI-scripts/blob/main/chatsh.mjs). 
+
+## FAQ
+
+#### What's your trick?
+The trick is a nice prompt with some good examples.
