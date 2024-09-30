@@ -2,6 +2,8 @@
 
 ChatSH is a command-line tool powered by Claude, designed for syntax-highlighted bash productivity.
 
+Note: This contains an anthropic api key for you to try it. It's limited to $5 a month so please don't abuse it.
+
 ## Features
 - Interactive LLM-powered bash REPL
 - Syntax highlighting for improved readability

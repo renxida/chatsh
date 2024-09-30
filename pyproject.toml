@@ -19,9 +19,12 @@ anthropic = "0.34.1"
 protobuf = "5.28.0"
 #tiktoken = "0.7.0" # may require in the future if we wanna generate estimates
 rich = "^13.8.1"
+textual = "^0.32.0"
+prompt-toolkit = "^3.0.48"
 
 [tool.poetry.scripts]
 chatsh = "chatsh:main"
+chatsh-tui = "chatsh.chatsh_textual:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
@@ -30,6 +33,7 @@ pytest-asyncio = "^0.24.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
 
 [tool.poetry.urls]
 Homepage = "https://github.com/renxida/chatsh"
