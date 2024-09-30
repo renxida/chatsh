@@ -1,6 +1,6 @@
 # Demo
 
-![Cube Script Demo](demo_gifs/cube_script.gif)
+[![Cube Script Demo](demo_gifs/cube_script.gif)](https://www.youtube.com/watch?v=W1ValKNYw_U)
 
 
 # ChatSH: a Minimalist LLM Shell
