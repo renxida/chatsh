@@ -16,6 +16,20 @@ MODELS = {
     'i': 'gemini-1.5-flash-latest',
     'I': 'gemini-1.5-pro-exp-0801'
 }
+
+def get_vendor_from_model(model):
+    model = MODELS.get(model, model).lower()
+    if model.startswith('gpt') or model.startswith('chatgpt'):
+        return 'openai'
+    elif model.startswith('claude'):
+        return 'anthropic'
+    elif model.startswith('llama'):
+        return 'openai'  # Using OpenAI for Llama models
+    elif model.startswith('gemini'):
+        return 'google'
+    else:
+        raise ValueError(f"Unsupported model: {model}")
+
 class Chat(ABC):
     def __init__(self):
         self.messages = []
@@ -40,9 +54,8 @@ class AnthropicChat(Chat):
         )
 
         cached_system = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
-
         prompt_system = cached_system if system_cacheable else system
-        params = {"system": prompt_system, "model": model, "temperature": temperature, "max_tokens": max_tokens,}
+        params = {"system": prompt_system, "model": model, "temperature": temperature, "max_tokens": max_tokens}
 
         try:
             assistant_message = ""
@@ -56,23 +69,14 @@ class AnthropicChat(Chat):
                 assistant_message = response.content
                 yield response.content
 
-            self.messages.append({"role": "user", "content": user_message})
-            self.messages.append({"role": 'assistant', "content": assistant_message})
+            self.messages.extend([
+                {"role": "user", "content": user_message},
+                {"role": 'assistant', "content": assistant_message}
+            ])
         except Exception as e:
             print(f"\nError occurred: {str(e)}")
             print("The last message was not added to the conversation history.")
             raise
-
-async def get_token(vendor):
-    token_path = os.path.join(os.path.expanduser('~'), '.config', f'{vendor}.token')
-    try:
-        async with aiofiles.open(token_path, 'r') as f:
-            return (await f.read()).strip()
-    except Exception as err:
-        print(f"Error reading {vendor}.token file: {err}")
-        raise
-
-
 
 class OpenAIChat(Chat):
     async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
@@ -105,6 +109,7 @@ class OpenAIChat(Chat):
 
 class GeminiChat(Chat):
     async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
+        import google.generativeai as genai
         model = MODELS.get(model, model)
         genai.configure(api_key=await get_token('google'))
 
@@ -135,8 +140,10 @@ class GeminiChat(Chat):
             else:
                 result = response.text
 
-            self.messages.append({"role": "user", "parts": [{"text": user_message}]})
-            self.messages.append({"role": 'model', "parts": [{"text": result}]})
+            self.messages.extend([
+                {"role": "user", "parts": [{"text": user_message}]},
+                {"role": 'model', "parts": [{"text": result}]}
+            ])
         except Exception as e:
             print(f"\nError occurred: {str(e)}")
             print("The last message was not added to the conversation history.")
@@ -145,17 +152,15 @@ class GeminiChat(Chat):
         return result
 
 def chat(model) -> Chat:
-    model = MODELS.get(model, model)
-    if model.startswith('gpt') or model.startswith('chatgpt'):
+    vendor = get_vendor_from_model(model)
+    if vendor == 'openai':
         return OpenAIChat()
-    elif model.startswith('claude'):
+    elif vendor == 'anthropic':
         return AnthropicChat()
-    elif model.startswith('llama'):
-        return OpenAIChat()  # Using OpenAI for Llama models
-    elif model.startswith('gemini'):
+    elif vendor == 'google':
         return GeminiChat()
     else:
-        raise ValueError(f"Unsupported model: {model}")
+        raise ValueError(f"Unsupported vendor: {vendor}")
 
 async def get_token(vendor):
     token_path = os.path.join(os.path.expanduser('~'), '.config', f'{vendor}.token')
