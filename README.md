@@ -1,3 +1,8 @@
+# Demo
+
+![Cube Script Demo](demo_gifs/cube_script.gif)
+
+
 # ChatSH: a Minimalist LLM Shell
 
 ChatSH is a command-line tool powered by Claude, designed for syntax-highlighted bash productivity.
