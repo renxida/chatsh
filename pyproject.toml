@@ -14,6 +14,7 @@ protobuf = "5.28.0"
 tiktoken = "0.7.0"
 rich = "^13.8.1"
 textual = "^0.32.0"
+prompt-toolkit = "^3.0.48"
 
 [tool.poetry.scripts]
 chatsh = "chatsh:main"

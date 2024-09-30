@@ -15,7 +15,10 @@ from rich.markdown import Markdown
 from rich.syntax import Syntax
 from rich.panel import Panel
 from rich.live import Live
-from rich.prompt import Confirm
+from rich.prompt import Prompt, Confirm
+from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.styles import Style
 
 console = Console()
 DEFAULT_MODEL = "s"
@@ -120,17 +123,33 @@ async def handle_code_execution(codes):
             return "Command skipped.\n"
     return ""
 
+
+class UndeletablePrompt:
+    def __init__(self):
+        self.prompt_style = Style.from_dict({
+            'lambda': '#00BFFF bold',  # Deep Sky Blue
+            'separator': '#555555',    # Dim Gray
+        })
+        self.prompt_message = HTML('<lambda>λ</lambda> <separator> </separator> ')
+        self.prompt_session = PromptSession(
+            message=self.prompt_message,
+            style=self.prompt_style
+        )
+
+    async def get_input(self):
+        return await self.prompt_session.prompt_async()
+
 async def main_loop(chat_instance, system_prompt, model, conversation_file):
     last_output = ""
     initial_user_message = ' '.join(sys.argv[2:]) if len(sys.argv) > 2 else None
+    prompt = UndeletablePrompt()
 
     while True:
         if initial_user_message:
             user_message = initial_user_message
             initial_user_message = None
         else:
-            console.print("[bold blue]λ[/bold blue]", end=" ")
-            user_message = input()
+            user_message = await prompt.get_input()
 
         if user_message.lower().startswith(("good bot", "bad bot")):
             handle_exit(user_message, conversation_file)
