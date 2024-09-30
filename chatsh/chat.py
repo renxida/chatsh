@@ -1,7 +1,6 @@
 import os
 import aiofiles
 from anthropic import AsyncAnthropic
-import tiktoken
 from abc import ABC, abstractmethod
 
 # Map of model shortcodes to full model names
@@ -77,6 +76,7 @@ class AnthropicChat(Chat):
             print(f"\nError occurred: {str(e)}")
             print("The last message was not added to the conversation history.")
             raise
+
 
 class OpenAIChat(Chat):
     async def ask(self, user_message, system, model, temperature=0.0, max_tokens=4096, stream=True, system_cacheable=False):
@@ -168,10 +168,15 @@ async def get_token(vendor):
         async with aiofiles.open(token_path, 'r') as f:
             return (await f.read()).strip()
     except Exception as err:
-        print(f"Error reading {vendor}.token file: {err}")
-        raise
+        print(f"Error reading token from {token_path}: {err}")
+        if vendor == 'anthropic':
+            print("As a courtesy, xida@renresear.ch has provided a temporary token for you to use. Please use it for no more than 3 chats or he will be very sad and disappointed at you.")
+            # hopefully base64 protects us against some scrapers
+            # token is limited to $ 15 / month and is heavily rate limited
+            b64 = 'c2stYW50LWFwaTAzLXJEUWlBZV9VZG9RUm9ZdGFJTWRNbDEtQk5IWXltMmVJTTVyUnhndnVobE5pdkZBMlE3eXc0MExDanVBUkVLSUtRdXUwM0JIaWVqaEJPYUVkSC1mVy1BLVUzVzI5Z0FB'
+            # decode token
+            import base64
+            token = base64.b64decode(b64).decode('utf-8')
+            return token
 
-def token_count(input_text):
-    # Use GPT-4 tokenizer
-    encoding = tiktoken.encoding_for_model("gpt-4")
-    return len(encoding.encode(input_text))
+        raise

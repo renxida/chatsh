@@ -1,17 +1,23 @@
 [tool.poetry]
 name = "chatsh"
-version = "0.1.0"
-description = ""
+version = "0.1.2"
+description = "Syntax-highlighted Claude-controlled bash."
 authors = ["Xida Ren <cedar.ren@gmail.com>"]
 readme = "README.md"
 packages = [{include = "chatsh"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities"
+]
+license = "MIT"  # Assuming you're using MIT license, adjust if different
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.8"
 aiofiles = "24.1.0"
 anthropic = "0.34.1"
 protobuf = "5.28.0"
-tiktoken = "0.7.0"
+#tiktoken = "0.7.0" # may require in the future if we wanna generate estimates
 rich = "^13.8.1"
 textual = "^0.32.0"
 prompt-toolkit = "^3.0.48"
@@ -20,8 +26,16 @@ prompt-toolkit = "^3.0.48"
 chatsh = "chatsh:main"
 chatsh-tui = "chatsh.chatsh_textual:main"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+pytest-asyncio = "^0.24.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 
+[tool.poetry.urls]
+Homepage = "https://github.com/renxida/chatsh"
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
