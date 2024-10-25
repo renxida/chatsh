@@ -12,6 +12,10 @@ class ConversationEntry:
     role: str
     content: str
     execution_output: Optional[str] = None
+    def extract_codeblocks(self) -> List[str]:
+        text = self.content
+        regex = r"```sh([\s\S]*?)```"
+        return [match.strip() for match in re.findall(regex, text)]
 
 class ConversationHistory:
     def __init__(self):
@@ -19,6 +23,15 @@ class ConversationHistory:
 
     def add_entry(self, role: str, content: str, execution_output: Optional[str] = None):
         self.entries.append(ConversationEntry(role, content, execution_output))
+        return self.entries[-1]
+    
+    def extract_most_recent_codeblocks(self) -> List[str]:
+        codeblocks = []
+        for entry in reversed(self.entries):
+            codeblocks = entry.extract_codeblocks()
+            if codeblocks:
+                break
+        return codeblocks
 
 
     def handle_back_command(self, user_message: str) -> List[ConversationEntry]:

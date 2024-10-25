@@ -1,14 +1,11 @@
-/* chat_app.css */
-
-#chat_log {
-    background: $background;
-    color: $text;
+/* #chat_log {
+    height: 1fr;
+    border: none;
     padding: 1;
-    border: round $accent;
 }
 
 #user_input {
-    border: round $accent;
-    height: 1;
-    width: 100%;
-}
+    height: auto;
+    border-top: solid;
+    padding: 1;
+} */

@@ -7,6 +7,10 @@ from rich.markdown import Markdown
 from rich.console import Console
 
 console = Console()
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Input, MarkdownViewer
+from textual.containers import Vertical
+from rich.markdown import Markdown
 
 class ChatMessage:
     """A simple class to represent a chat message."""
@@ -34,9 +38,9 @@ class ChatApp(App):
     def compose(self) -> ComposeResult:
         """Compose the UI components."""
         yield Header()
-        yield MarkdownViewer(id="chat_log")
-        yield Horizontal(
-            Input(placeholder="Type your message here...", id="user_input")
+        yield Vertical(
+            MarkdownViewer(id="chat_log"),  # Allow chat log to expand vertically
+            Input(placeholder="Type your message here...", id="user_input"),
         )
         yield Footer()
 
@@ -65,7 +69,7 @@ class ChatApp(App):
             self.conversation.append(user_message)
             self.refresh_chat()
 
-            # Clear the input box (remove await)
+            # Clear the input box
             self.query_one("#user_input", Input).clear()
 
             # System's reply
@@ -84,13 +88,7 @@ class ChatApp(App):
         chat_markdown = "\n\n".join([msg.to_markdown() for msg in self.conversation])
         # Update the MarkdownViewer with the new content
         chat_log.markdown = chat_markdown
-        # Note: MarkdownViewer might not have a scroll_end method in textual==0.84
-        # If scrolling is not automatically handled, you may need to implement it differently
-        # For now, we'll omit the scroll_end call to prevent errors
 
-    def on_key(self, event) -> None:
-        """Handle key presses (optional for additional functionality)."""
-        pass
 
 if __name__ == "__main__":
     app = ChatApp()
