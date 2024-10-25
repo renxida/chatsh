@@ -19,6 +19,8 @@ from rich.prompt import Prompt, Confirm
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+from typing import Tuple, List, Optional
+
 
 console = Console()
 DEFAULT_MODEL = "s"
@@ -79,13 +81,6 @@ def extract_codes(text):
     regex = r"```sh([\s\S]*?)```"
     return [match.strip() for match in re.findall(regex, text)]
 
-def handle_back_command(user_message, chat_instance):
-    match = re.match(r'^(b|back)\s+(\d+)$', user_message.lower())
-    if match:
-        steps = int(match.group(2))
-        removed_messages = chat_instance.back(steps)
-        return True, steps
-    return False, 0
 
 async def execute_code(code):
     try:
@@ -99,7 +94,7 @@ async def execute_code(code):
     except Exception as error:
         return str(error)
 
-async def process_assistant_response(chat_instance, full_message, system_prompt, model):
+async def process_assistant_response(chat_instance, full_message: str, system_prompt: str, model: str) -> str:
     assistant_message = ""
     with Live(console=console, refresh_per_second=4) as live:
         async for chunk in chat_instance.ask(full_message, system=system_prompt, model=model, max_tokens=8192, system_cacheable=True, stream=True):
@@ -107,8 +102,8 @@ async def process_assistant_response(chat_instance, full_message, system_prompt,
             live.update(Markdown(assistant_message))
     console.print()
     return assistant_message
-
-async def handle_code_execution(codes):
+    
+async def handle_code_execution(codes: List[str]) -> str:
     if codes:
         combined_code = '\n'.join(codes)
         console.print(Panel(Syntax(combined_code, "sh", theme="monokai", line_numbers=True)))
@@ -122,6 +117,7 @@ async def handle_code_execution(codes):
             console.print(Markdown('Execution skipped.'))
             return "Command skipped.\n"
     return ""
+
 
 
 class UndeletablePrompt:
@@ -138,43 +134,8 @@ class UndeletablePrompt:
 
     async def get_input(self):
         return await self.prompt_session.prompt_async()
+    
 
-async def main_loop(chat_instance, system_prompt, model, conversation_file):
-    last_output = ""
-    initial_user_message = ' '.join(sys.argv[2:]) if len(sys.argv) > 2 else None
-    prompt = UndeletablePrompt()
-
-    while True:
-        if initial_user_message:
-            user_message = initial_user_message
-            initial_user_message = None
-        else:
-            user_message = await prompt.get_input()
-
-        if user_message.lower().startswith(("good bot", "bad bot")):
-            handle_exit(user_message, conversation_file)
-            break
-
-        is_back, steps = handle_back_command(user_message, chat_instance)
-        if is_back:
-            append_to_history(conversation_file, 'SYSTEM', f"<< Removed {steps} most recent message pairs >>")
-            continue
-
-        full_message = f"<SYSTEM>\n{last_output.strip()}\n</SYSTEM>\n<USER>\n{user_message}\n</USER>\n" if user_message.strip() else f"<SYSTEM>\n{last_output.strip()}\n</SYSTEM>"
-        
-        append_to_history(conversation_file, 'USER', user_message)
-
-        try:
-            assistant_message = await process_assistant_response(chat_instance, full_message, system_prompt, model)
-            append_to_history(conversation_file, 'ChatSH', assistant_message)
-
-            codes = extract_codes(assistant_message)
-            last_output = await handle_code_execution(codes)
-            append_to_history(conversation_file, 'SYSTEM', last_output)
-
-        except Exception as error:
-            console.print(f"[bold red]Error:[/bold red] {error}")
-            append_to_history(conversation_file, 'ERROR', str(error))
 
 def handle_exit(user_message, conversation_file):
     if user_message.lower().startswith("good bot"):
@@ -186,6 +147,50 @@ def handle_exit(user_message, conversation_file):
     
     console.print(f"Conversation transcript saved to: {conversation_file}")
     subprocess.run(["gh", "gist", "edit", "d0976d9e693afaaca5befd6a0b52b698", "-a", conversation_file])
+
+from chatsh.conversation import ConversationHistory, ConversationEntry
+
+async def main_loop(chat_instance, system_prompt: str, model: str, conversation_file: str):
+    history = ConversationHistory()
+    prompt = UndeletablePrompt()
+
+    while True:
+        user_message = await prompt.get_input()
+
+        if user_message.lower().startswith(("good bot", "bad bot")):
+            handle_exit(user_message, conversation_file)
+            break
+
+        removed_entries = history.handle_back_command(user_message)
+        back_pairs = len(removed_entries) // 2
+        if removed_entries:
+            console.print(Markdown(f"> Removed {back_pairs} most recent message pairs"))
+            console.print(Markdown("We are back at:"))
+            last_entry = history.entries[-1] if history.entries else None
+            if last_entry:
+                console.print(Panel(Syntax(last_entry.content, "markdown", theme="monokai")))
+            append_to_history(conversation_file, 'SYSTEM', f"<< Removed {back_pairs} most recent message pairs >>")
+            continue
+
+        history.add_entry('user', user_message)
+        append_to_history(conversation_file, 'USER', user_message)
+
+        try:
+            full_message = history.construct_full_message(system_prompt)
+            assistant_message = await process_assistant_response(chat_instance, full_message, system_prompt, model)
+            history.add_entry('assistant', assistant_message)
+            append_to_history(conversation_file, 'ChatSH', assistant_message)
+
+            codes = extract_codes(assistant_message)
+            if codes:
+                execution_output = await handle_code_execution(codes)
+                history.entries[-1].execution_output = execution_output
+                append_to_history(conversation_file, 'SYSTEM', execution_output)
+
+        except Exception as error:
+            console.print(f"[bold red]Error:[/bold red] {error}")
+            append_to_history(conversation_file, 'ERROR', str(error))
+
 
 def main():
     model = setup_environment()
