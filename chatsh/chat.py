@@ -8,7 +8,7 @@ MODELS = {
     'g': 'gpt-4o-2024-08-06',
     'G': 'gpt-4-32k-0314',
     'h': 'claude-3-haiku-20240307',
-    's': 'claude-3-5-sonnet-20240620',
+    's': 'claude-3-5-sonnet-20241022',
     'o': 'claude-3-opus-20240229',
     'l': 'llama-3.1-8b-instant',
     'L': 'llama-3.1-70b-versatile',
