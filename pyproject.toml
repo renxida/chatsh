@@ -20,7 +20,7 @@ protobuf = "5.28.0"
 #tiktoken = "0.7.0" # may require in the future if we wanna generate estimates
 rich = "^13.8.1"
 prompt-toolkit = "^3.0.48"
-textual = "^0.83.0"
+textual = ">=0.83.0"
 
 [tool.poetry.scripts]
 chatsh = "chatsh:main"

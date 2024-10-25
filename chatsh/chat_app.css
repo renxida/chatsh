@@ -1,0 +1,14 @@
+/* chat_app.css */
+
+#chat_log {
+    background: $background;
+    color: $text;
+    padding: 1;
+    border: round $accent;
+}
+
+#user_input {
+    border: round $accent;
+    height: 1;
+    width: 100%;
+}
