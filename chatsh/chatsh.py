@@ -77,11 +77,6 @@ def append_to_history(conversation_file, role, message):
     with open(conversation_file, 'a') as f:
         f.write(formatted_message)
 
-def extract_codes(text):
-    regex = r"```sh([\s\S]*?)```"
-    return [match.strip() for match in re.findall(regex, text)]
-
-
 async def execute_code(code):
     try:
         proc = await asyncio.create_subprocess_shell(
@@ -180,8 +175,8 @@ async def main_loop(chat_instance, system_prompt: str, model: str, conversation_
             assistant_message = await process_assistant_response(chat_instance, full_message, system_prompt, model)
             history.add_entry('assistant', assistant_message)
             append_to_history(conversation_file, 'ChatSH', assistant_message)
-
-            codes = extract_codes(assistant_message)
+            
+            codes = history.entries[-1].get_codeblocks(last_only=True)
             if codes:
                 execution_output = await handle_code_execution(codes)
                 history.entries[-1].execution_output = execution_output

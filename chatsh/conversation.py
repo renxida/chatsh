@@ -13,6 +13,13 @@ class ConversationEntry:
     content: str
     execution_output: Optional[str] = None
 
+    def get_codeblocks(self, block_type: str = "sh", last_only: bool = True) -> List[str]:
+        regex = rf"```{block_type}([\s\S]*?)```"
+        matches = [match.strip() for match in re.findall(regex, self.content)]
+        if last_only:
+            return matches[-1:]
+        return matches
+
 class ConversationHistory:
     def __init__(self):
         self.entries: List[ConversationEntry] = []
