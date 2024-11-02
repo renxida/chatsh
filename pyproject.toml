@@ -21,6 +21,7 @@ protobuf = "5.28.0"
 rich = "^13.8.1"
 prompt-toolkit = "^3.0.48"
 textual = "^0.83.0"
+dataclasses-json = "^0.5.7"
 
 [tool.poetry.scripts]
 chatsh = "chatsh:main"
