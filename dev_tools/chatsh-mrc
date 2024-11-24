@@ -1,0 +1,43 @@
+#!/bin/bash
+
+mrc() {
+    local print_content=0
+    local n=1
+    local history_dir="$HOME/.local/share/chatsh_history"
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -p)
+                print_content=1
+                shift
+                ;;
+            *)
+                if [[ $1 =~ ^[0-9]+$ ]]; then
+                    n=$1
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    # Get nth most recent file
+    local file=$(ls -t "$history_dir"/*.txt 2>/dev/null | sed -n "${n}p")
+    
+    if [[ -z "$file" ]]; then
+        echo "No chat history file found"
+        return 1
+    fi
+
+    if [[ $print_content -eq 1 ]]; then
+        cat "$file"
+    else
+        echo "$file"
+    fi
+}
+
+# Source this file to use the mrc function
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "This script should be sourced, not executed directly."
+    echo "Use: source ${0}"
+fi
