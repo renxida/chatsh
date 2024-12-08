@@ -15,7 +15,7 @@ license = "MIT"  # Assuming you're using MIT license, adjust if different
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 aiofiles = "24.1.0"
-anthropic = "0.34.1"
+anthropic = ">0.34.1"
 protobuf = "5.28.0"
 #tiktoken = "0.7.0" # may require in the future if we wanna generate estimates
 rich = "^13.8.1"
